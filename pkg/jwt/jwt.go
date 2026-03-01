@@ -138,7 +138,7 @@ func GenerateToken(userID uint, username string, roleIDs []uint, expireDuration 
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expireDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "gin-app-start",
+			Issuer:    "gin-app",
 		},
 	}
 
