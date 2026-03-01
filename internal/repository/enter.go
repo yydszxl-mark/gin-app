@@ -1,15 +1,23 @@
 package repository
 
-import "gin-app-start/internal/model"
+import "gorm.io/gorm"
 
-var RepoGroupApp = new(RepoGroup)
-
-type RepoGroup struct {
-	UserRepository
-	DeviceRepository
+// RepositoryGroup 仓储层组
+type RepositoryGroup struct {
+	UserRepo       UserRepository
+	DeviceRepo     DeviceRepository
+	RoleRepo       RoleRepository
+	PermissionRepo PermissionRepository
+	MenuRepo       MenuRepository
 }
 
-func init() {
-	RepoGroupApp.UserRepository = &userRepository{BaseRepository: &BaseRepository[model.User]{}}
-	RepoGroupApp.DeviceRepository = &deviceRepository{BaseRepository: &BaseRepository[model.Device]{}}
+// NewRepositoryGroup 创建仓储层组
+func NewRepositoryGroup(db *gorm.DB) *RepositoryGroup {
+	return &RepositoryGroup{
+		UserRepo:       NewUserRepository(db),
+		DeviceRepo:     NewDeviceRepository(db),
+		RoleRepo:       NewRoleRepository(db),
+		PermissionRepo: NewPermissionRepository(db),
+		MenuRepo:       NewMenuRepository(db),
+	}
 }

@@ -2,16 +2,22 @@ package controller
 
 import (
 	"gin-app-start/internal/dto"
-	"gin-app-start/pkg/errors"
-	"gin-app-start/pkg/logger"
+	"gin-app-start/internal/service"
 	"gin-app-start/pkg/response"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
-type UserController struct{}
+type UserController struct {
+	userService service.UserService
+}
+
+func NewUserController(userService service.UserService) *UserController {
+	return &UserController{
+		userService: userService,
+	}
+}
 
 // CreateUser godoc
 //
@@ -32,7 +38,7 @@ func (ctrl *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := userService.CreateUser(c.Request.Context(), &req)
+	user, err := ctrl.userService.CreateUser(c.Request.Context(), &req)
 	if err != nil {
 		handleServiceError(c, err)
 		return
@@ -62,7 +68,7 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := userService.GetUser(c.Request.Context(), uint(id))
+	user, err := ctrl.userService.GetUser(c.Request.Context(), uint(id))
 	if err != nil {
 		handleServiceError(c, err)
 		return
@@ -99,7 +105,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := userService.UpdateUser(c.Request.Context(), uint(id), &req)
+	user, err := ctrl.userService.UpdateUser(c.Request.Context(), uint(id), &req)
 	if err != nil {
 		handleServiceError(c, err)
 		return
@@ -129,7 +135,7 @@ func (ctrl *UserController) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := userService.DeleteUser(c.Request.Context(), uint(id)); err != nil {
+	if err := ctrl.userService.DeleteUser(c.Request.Context(), uint(id)); err != nil {
 		handleServiceError(c, err)
 		return
 	}
@@ -153,7 +159,7 @@ func (ctrl *UserController) ListUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 
-	users, total, err := userService.ListUsers(c.Request.Context(), page, pageSize)
+	users, total, err := ctrl.userService.ListUsers(c.Request.Context(), page, pageSize)
 	if err != nil {
 		handleServiceError(c, err)
 		return
@@ -162,13 +168,25 @@ func (ctrl *UserController) ListUsers(c *gin.Context) {
 	response.SuccessWithPage(c, users, total, page, pageSize)
 }
 
-func handleServiceError(c *gin.Context, err error) {
-	var bizErr *errors.BusinessError
-	if e, ok := err.(*errors.BusinessError); ok {
-		bizErr = e
-		response.Error(c, bizErr.Code, bizErr.Message)
-	} else {
-		logger.Error("Unknown error", zap.Error(err))
-		response.Error(c, 50000, "Internal server error")
+// AssignRoles 分配角色给用户
+func (ctrl *UserController) AssignRoles(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		response.Error(c, 10001, "Invalid user ID")
+		return
 	}
+
+	var req dto.AssignRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, 10001, "Parameter binding failed: "+err.Error())
+		return
+	}
+
+	if err := ctrl.userService.AssignRoles(c.Request.Context(), uint(id), &req); err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "分配角色成功"})
 }

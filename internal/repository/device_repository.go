@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"gin-app-start/internal/model"
+
+	"gorm.io/gorm"
 )
 
 type DeviceRepository interface {
@@ -17,6 +19,12 @@ type DeviceRepository interface {
 
 type deviceRepository struct {
 	*BaseRepository[model.Device]
+}
+
+func NewDeviceRepository(db *gorm.DB) DeviceRepository {
+	return &deviceRepository{
+		BaseRepository: &BaseRepository[model.Device]{},
+	}
 }
 
 func (r *deviceRepository) GetByName(ctx context.Context, name string) (*model.Device, error) {

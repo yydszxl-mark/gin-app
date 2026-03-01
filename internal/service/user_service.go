@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"crypto/md5"
-	"crypto/rand"
-	"encoding/hex"
 	"gin-app-start/internal/dto"
 	"gin-app-start/internal/model"
+	"gin-app-start/internal/repository"
 	"gin-app-start/pkg/errors"
 	"gin-app-start/pkg/logger"
+	"gin-app-start/pkg/utils"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -21,13 +20,21 @@ type UserService interface {
 	UpdateUser(ctx context.Context, id uint, req *dto.UpdateUserRequest) (*model.User, error)
 	DeleteUser(ctx context.Context, id uint) error
 	ListUsers(ctx context.Context, page, pageSize int) ([]*model.User, int64, error)
+	AssignRoles(ctx context.Context, userID uint, req *dto.AssignRolesRequest) error
 }
 
 type userService struct {
+	userRepo repository.UserRepository
+}
+
+func NewUserService(userRepo repository.UserRepository) UserService {
+	return &userService{
+		userRepo: userRepo,
+	}
 }
 
 func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*model.User, error) {
-	existingUser, err := userRepository.GetByUsername(ctx, req.Username)
+	existingUser, err := s.userRepo.GetByUsername(ctx, req.Username)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logger.Error("Failed to query user", zap.Error(err), zap.String("username", req.Username))
 		return nil, errors.WrapBusinessError(10010, "Failed to query user", err)
@@ -38,7 +45,7 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 	}
 
 	if req.Email != "" {
-		existingUser, err = userRepository.GetByEmail(ctx, req.Email)
+		existingUser, err = s.userRepo.GetByEmail(ctx, req.Email)
 		if err != nil && err != gorm.ErrRecordNotFound {
 			logger.Error("Failed to query email", zap.Error(err), zap.String("email", req.Email))
 			return nil, errors.WrapBusinessError(10011, "Failed to query email", err)
@@ -48,8 +55,12 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 		}
 	}
 
-	salt := generateSalt()
-	hashedPassword := hashPassword(req.Password, salt)
+	salt, err := utils.GenerateSalt(16)
+	if err != nil {
+		logger.Error("Failed to generate salt", zap.Error(err))
+		return nil, errors.WrapBusinessError(50000, "生成盐值失败", err)
+	}
+	hashedPassword := utils.HashPassword(req.Password, salt)
 
 	user := &model.User{
 		Username: req.Username,
@@ -60,7 +71,7 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 		Status:   1,
 	}
 
-	if err := userRepository.Create(ctx, user); err != nil {
+	if err := s.userRepo.Create(ctx, user); err != nil {
 		logger.Error("Failed to create user", zap.Error(err), zap.String("username", req.Username))
 		return nil, errors.WrapBusinessError(10013, "Failed to create user", err)
 	}
@@ -74,7 +85,7 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 }
 
 func (s *userService) GetUser(ctx context.Context, id uint) (*model.User, error) {
-	user, err := userRepository.GetByID(ctx, id)
+	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.ErrUserNotFound
@@ -86,7 +97,7 @@ func (s *userService) GetUser(ctx context.Context, id uint) (*model.User, error)
 }
 
 func (s *userService) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
-	user, err := userRepository.GetByUsername(ctx, username)
+	user, err := s.userRepo.GetByUsername(ctx, username)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.ErrUserNotFound
@@ -98,7 +109,7 @@ func (s *userService) GetUserByUsername(ctx context.Context, username string) (*
 }
 
 func (s *userService) UpdateUser(ctx context.Context, id uint, req *dto.UpdateUserRequest) (*model.User, error) {
-	user, err := userRepository.GetByID(ctx, id)
+	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.ErrUserNotFound
@@ -119,7 +130,7 @@ func (s *userService) UpdateUser(ctx context.Context, id uint, req *dto.UpdateUs
 		user.Status = req.Status
 	}
 
-	if err := userRepository.Update(ctx, user); err != nil {
+	if err := s.userRepo.Update(ctx, user); err != nil {
 		logger.Error("Failed to update user", zap.Error(err), zap.Uint("user_id", id))
 		return nil, errors.WrapBusinessError(10017, "Failed to update user", err)
 	}
@@ -129,7 +140,7 @@ func (s *userService) UpdateUser(ctx context.Context, id uint, req *dto.UpdateUs
 }
 
 func (s *userService) DeleteUser(ctx context.Context, id uint) error {
-	if err := userRepository.Delete(ctx, id); err != nil {
+	if err := s.userRepo.Delete(ctx, id); err != nil {
 		logger.Error("Failed to delete user", zap.Error(err), zap.Uint("user_id", id))
 		return errors.WrapBusinessError(10018, "Failed to delete user", err)
 	}
@@ -150,7 +161,7 @@ func (s *userService) ListUsers(ctx context.Context, page, pageSize int) ([]*mod
 	}
 
 	offset := (page - 1) * pageSize
-	users, total, err := userRepository.List(ctx, offset, pageSize)
+	users, total, err := s.userRepo.List(ctx, offset, pageSize)
 	if err != nil {
 		logger.Error("Failed to get user list", zap.Error(err))
 		return nil, 0, errors.WrapBusinessError(10019, "Failed to get user list", err)
@@ -159,17 +170,21 @@ func (s *userService) ListUsers(ctx context.Context, page, pageSize int) ([]*mod
 	return users, total, nil
 }
 
-func generateSalt() string {
-	salt := make([]byte, 16)
-	rand.Read(salt)
-	return hex.EncodeToString(salt)
-}
+func (s *userService) AssignRoles(ctx context.Context, userID uint, req *dto.AssignRolesRequest) error {
+	// 检查用户是否存在
+	_, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.ErrUserNotFound
+		}
+		return errors.WrapBusinessError(10014, "Failed to get user", err)
+	}
 
-func hashPassword(password, salt string) string {
-	hash := md5.Sum([]byte(password + salt))
-	return hex.EncodeToString(hash[:])
-}
+	if err := s.userRepo.AssignRoles(ctx, userID, req.RoleIDs); err != nil {
+		logger.Error("Failed to assign roles", zap.Error(err))
+		return errors.WrapBusinessError(10005, "分配角色失败", err)
+	}
 
-func VerifyPassword(password, salt, hashedPassword string) bool {
-	return hashPassword(password, salt) == hashedPassword
+	logger.Info("Roles assigned successfully", zap.Uint("user_id", userID))
+	return nil
 }

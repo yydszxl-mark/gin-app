@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"gin-app-start/internal/model"
+
+	"gorm.io/gorm"
 )
 
 type UserRepository interface {
@@ -14,10 +16,18 @@ type UserRepository interface {
 	Update(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, id uint) error
 	List(ctx context.Context, offset, limit int) ([]*model.User, int64, error)
+	AssignRoles(ctx context.Context, userID uint, roleIDs []uint) error
+	GetUserWithRoles(ctx context.Context, userID uint) (*model.User, error)
 }
 
 type userRepository struct {
 	*BaseRepository[model.User]
+}
+
+func NewUserRepository(db *gorm.DB) UserRepository {
+	return &userRepository{
+		BaseRepository: &BaseRepository[model.User]{},
+	}
 }
 
 func (r *userRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
@@ -57,4 +67,36 @@ func (r *userRepository) List(ctx context.Context, offset, limit int) ([]*model.
 
 	err := r.GetDB().WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error
 	return users, total, err
+}
+
+func (r *userRepository) AssignRoles(ctx context.Context, userID uint, roleIDs []uint) error {
+	var user model.User
+	if err := r.GetDB().WithContext(ctx).First(&user, userID).Error; err != nil {
+		return err
+	}
+
+	// 清空现有角色
+	if err := r.GetDB().WithContext(ctx).Model(&user).Association("Roles").Clear(); err != nil {
+		return err
+	}
+
+	// 分配新角色
+	if len(roleIDs) > 0 {
+		var roles []model.Role
+		if err := r.GetDB().WithContext(ctx).Find(&roles, roleIDs).Error; err != nil {
+			return err
+		}
+		return r.GetDB().WithContext(ctx).Model(&user).Association("Roles").Append(roles)
+	}
+
+	return nil
+}
+
+func (r *userRepository) GetUserWithRoles(ctx context.Context, userID uint) (*model.User, error) {
+	var user model.User
+	err := r.GetDB().WithContext(ctx).Preload("Roles").First(&user, userID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

@@ -20,6 +20,8 @@
 - 📚 **Swagger 文档** - 自动生成 API 文档
 - 🔄 **优雅关闭** - 支持 Graceful Shutdown
 - 🔧 **泛型仓储** - 使用 Go 泛型实现通用数据访问层
+- 🔐 **RBAC 权限系统** - 完整的角色权限管理（用户、角色、权限、菜单）
+- 🔑 **JWT 认证** - 基于 RSA 的 JWT Token 认证机制
 
 ## 📚 文档导航
 
@@ -28,6 +30,8 @@
 | [项目使用指南](docs/PROJECT_GUIDE.md) | 详细的开发文档和最佳实践 |
 | [API 接口文档](docs/API_REFERENCE.md) | 完整的 API 参考和示例 |
 | [架构设计文档](docs/ARCHITECTURE.md) | 技术架构和设计理念 |
+| [RBAC 权限系统](docs/RBAC.md) | RBAC 权限系统完整文档 |
+| [RBAC 快速开始](docs/RBAC_QUICKSTART.md) | RBAC 系统快速上手指南 |
 
 ## 🚀 快速开始
 
@@ -80,6 +84,38 @@ SERVER_ENV=local go run cmd/server/main.go
 # 5. 验证运行
 curl http://localhost:9060/health
 ```
+
+### 初始化 RBAC 系统
+
+```bash
+# 运行初始化脚本
+go run scripts/init_rbac.go
+
+# 将创建：
+# - 管理员用户（admin/admin123）
+# - 管理员和开发者角色
+# - 28个权限
+# - 8个菜单
+```
+
+### 测试 RBAC 功能
+
+```bash
+# 1. 登录获取 Token
+curl -X POST http://localhost:9060/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 2. 使用 Token 访问受保护的接口
+curl -X GET http://localhost:9060/api/v1/user/info \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# 3. 获取用户菜单树
+curl -X GET http://localhost:9060/api/v1/menus/user/tree \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+详细使用说明请查看 [RBAC 快速开始](docs/RBAC_QUICKSTART.md)。
 
 ### 方式三：热重载开发
 

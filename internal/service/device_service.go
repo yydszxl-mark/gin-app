@@ -4,6 +4,7 @@ import (
 	"context"
 	"gin-app-start/internal/dto"
 	"gin-app-start/internal/model"
+	"gin-app-start/internal/repository"
 	"gin-app-start/pkg/errors"
 	"gin-app-start/pkg/logger"
 
@@ -22,10 +23,17 @@ type DeviceService interface {
 }
 
 type deviceService struct {
+	deviceRepo repository.DeviceRepository
+}
+
+func NewDeviceService(deviceRepo repository.DeviceRepository) DeviceService {
+	return &deviceService{
+		deviceRepo: deviceRepo,
+	}
 }
 
 func (s *deviceService) CreateDevice(ctx context.Context, req *dto.CreateDeviceRequest) (*model.Device, error) {
-	existingDevice, err := deviceRepository.GetByName(ctx, req.Name)
+	existingDevice, err := s.deviceRepo.GetByName(ctx, req.Name)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logger.Error("Failed to query device", zap.Error(err), zap.String("name", req.Name))
 		return nil, errors.WrapBusinessError(20010, "Failed to query device", err)
@@ -41,7 +49,7 @@ func (s *deviceService) CreateDevice(ctx context.Context, req *dto.CreateDeviceR
 		Content: req.Content,
 	}
 
-	if err := deviceRepository.Create(ctx, device); err != nil {
+	if err := s.deviceRepo.Create(ctx, device); err != nil {
 		logger.Error("Failed to create device", zap.Error(err), zap.String("name", req.Name))
 		return nil, errors.WrapBusinessError(20012, "Failed to create device", err)
 	}
@@ -55,7 +63,7 @@ func (s *deviceService) CreateDevice(ctx context.Context, req *dto.CreateDeviceR
 }
 
 func (s *deviceService) GetDevice(ctx context.Context, id uint) (*model.Device, error) {
-	device, err := deviceRepository.GetByID(ctx, id)
+	device, err := s.deviceRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.NewBusinessError(20013, "Device not found")
@@ -67,7 +75,7 @@ func (s *deviceService) GetDevice(ctx context.Context, id uint) (*model.Device, 
 }
 
 func (s *deviceService) GetDeviceByName(ctx context.Context, name string) (*model.Device, error) {
-	device, err := deviceRepository.GetByName(ctx, name)
+	device, err := s.deviceRepo.GetByName(ctx, name)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.NewBusinessError(20013, "Device not found")
@@ -79,7 +87,7 @@ func (s *deviceService) GetDeviceByName(ctx context.Context, name string) (*mode
 }
 
 func (s *deviceService) GetDevicesByType(ctx context.Context, deviceType string) ([]*model.Device, error) {
-	devices, err := deviceRepository.GetByType(ctx, deviceType)
+	devices, err := s.deviceRepo.GetByType(ctx, deviceType)
 	if err != nil {
 		logger.Error("Failed to get devices by type", zap.Error(err), zap.String("type", deviceType))
 		return nil, errors.WrapBusinessError(20016, "Failed to get devices by type", err)
@@ -88,7 +96,7 @@ func (s *deviceService) GetDevicesByType(ctx context.Context, deviceType string)
 }
 
 func (s *deviceService) UpdateDevice(ctx context.Context, id uint, req *dto.UpdateDeviceRequest) (*model.Device, error) {
-	device, err := deviceRepository.GetByID(ctx, id)
+	device, err := s.deviceRepo.GetByID(ctx, id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.NewBusinessError(20013, "Device not found")
@@ -103,7 +111,7 @@ func (s *deviceService) UpdateDevice(ctx context.Context, id uint, req *dto.Upda
 		device.Content = req.Content
 	}
 
-	if err := deviceRepository.Update(ctx, device); err != nil {
+	if err := s.deviceRepo.Update(ctx, device); err != nil {
 		logger.Error("Failed to update device", zap.Error(err), zap.Uint("device_id", id))
 		return nil, errors.WrapBusinessError(20018, "Failed to update device", err)
 	}
@@ -113,7 +121,7 @@ func (s *deviceService) UpdateDevice(ctx context.Context, id uint, req *dto.Upda
 }
 
 func (s *deviceService) DeleteDevice(ctx context.Context, id uint) error {
-	if err := deviceRepository.Delete(ctx, id); err != nil {
+	if err := s.deviceRepo.Delete(ctx, id); err != nil {
 		logger.Error("Failed to delete device", zap.Error(err), zap.Uint("device_id", id))
 		return errors.WrapBusinessError(20019, "Failed to delete device", err)
 	}
@@ -134,7 +142,7 @@ func (s *deviceService) ListDevices(ctx context.Context, page, pageSize int) ([]
 	}
 
 	offset := (page - 1) * pageSize
-	devices, total, err := deviceRepository.List(ctx, offset, pageSize)
+	devices, total, err := s.deviceRepo.List(ctx, offset, pageSize)
 	if err != nil {
 		logger.Error("Failed to get device list", zap.Error(err))
 		return nil, 0, errors.WrapBusinessError(20020, "Failed to get device list", err)

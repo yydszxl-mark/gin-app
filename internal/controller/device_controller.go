@@ -2,13 +2,22 @@ package controller
 
 import (
 	"gin-app-start/internal/dto"
+	"gin-app-start/internal/service"
 	"gin-app-start/pkg/response"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-type DeviceController struct{}
+type DeviceController struct {
+	deviceService service.DeviceService
+}
+
+func NewDeviceController(deviceService service.DeviceService) *DeviceController {
+	return &DeviceController{
+		deviceService: deviceService,
+	}
+}
 
 // CreateDevice godoc
 //
@@ -29,7 +38,7 @@ func (ctrl *DeviceController) CreateDevice(c *gin.Context) {
 		return
 	}
 
-	device, err := deviceService.CreateDevice(c.Request.Context(), &req)
+	device, err := ctrl.deviceService.CreateDevice(c.Request.Context(), &req)
 	if err != nil {
 		handleServiceError(c, err)
 		return
@@ -59,7 +68,7 @@ func (ctrl *DeviceController) GetDevice(c *gin.Context) {
 		return
 	}
 
-	device, err := deviceService.GetDevice(c.Request.Context(), uint(id))
+	device, err := ctrl.deviceService.GetDevice(c.Request.Context(), uint(id))
 	if err != nil {
 		handleServiceError(c, err)
 		return
@@ -96,7 +105,7 @@ func (ctrl *DeviceController) UpdateDevice(c *gin.Context) {
 		return
 	}
 
-	device, err := deviceService.UpdateDevice(c.Request.Context(), uint(id), &req)
+	device, err := ctrl.deviceService.UpdateDevice(c.Request.Context(), uint(id), &req)
 	if err != nil {
 		handleServiceError(c, err)
 		return
@@ -126,7 +135,7 @@ func (ctrl *DeviceController) DeleteDevice(c *gin.Context) {
 		return
 	}
 
-	if err := deviceService.DeleteDevice(c.Request.Context(), uint(id)); err != nil {
+	if err := ctrl.deviceService.DeleteDevice(c.Request.Context(), uint(id)); err != nil {
 		handleServiceError(c, err)
 		return
 	}
@@ -150,7 +159,7 @@ func (ctrl *DeviceController) ListDevices(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 
-	devices, total, err := deviceService.ListDevices(c.Request.Context(), page, pageSize)
+	devices, total, err := ctrl.deviceService.ListDevices(c.Request.Context(), page, pageSize)
 	if err != nil {
 		handleServiceError(c, err)
 		return

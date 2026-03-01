@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"gin-app-start/internal/config"
+	"gin-app-start/internal/controller"
 	"gin-app-start/internal/model"
+	"gin-app-start/internal/repository"
 	"gin-app-start/internal/router"
+	"gin-app-start/internal/service"
 	"gin-app-start/pkg/database"
+	"gin-app-start/pkg/jwt"
 	"gin-app-start/pkg/logger"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"os"
@@ -42,19 +47,51 @@ var Version string
 func main() {
 	log.Printf("Version: %s\n", Version)
 
+	// 1. 加载配置
 	cfg, err := config.Load()
-
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+
+	// 2. 初始化日志
 	initZapLog(cfg)
-	initDB(cfg)
+
+	// 3. 初始化数据库
+	db := initDB(cfg)
+
+	// 4. 初始化 Redis
 	initRedis(cfg)
-	initRouter(cfg)
+
+	// 5. 初始化 JWT
+	initJWT()
+
+	// 6. 初始化依赖注入链
+	// Repository 层
+	repoGroup := repository.NewRepositoryGroup(db)
+
+	// Service 层
+	svcGroup := service.NewServiceGroup(repoGroup)
+
+	// Controller 层
+	ctrlGroup := controller.NewControllerGroup(svcGroup)
+
+	// 7. 初始化路由
+	initRouter(cfg, db, ctrlGroup)
 }
 
-func initRouter(cfg *config.Config) {
-	r := router.SetupRouter(cfg)
+func initJWT() {
+	// 初始化 JWT 密钥对
+	privateKeyPath := "configs/private_key.pem"
+	publicKeyPath := "configs/public_key.pem"
+
+	if err := jwt.InitJWT(privateKeyPath, publicKeyPath); err != nil {
+		logger.Fatal("Failed to initialize JWT", zap.Error(err))
+	}
+	logger.Info("JWT initialized successfully")
+}
+
+func initRouter(cfg *config.Config, db *gorm.DB, ctrlGroup *controller.ControllerGroup) {
+	r := router.SetupRouter(cfg, db, ctrlGroup)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
@@ -115,7 +152,7 @@ func initRedis(cfg *config.Config) {
 	}
 }
 
-func initDB(cfg *config.Config) {
+func initDB(cfg *config.Config) *gorm.DB {
 	db, err := database.NewPostgresDB(&database.PostgresConfig{
 		Host:         cfg.Database.Host,
 		Port:         cfg.Database.Port,
@@ -133,13 +170,21 @@ func initDB(cfg *config.Config) {
 	}
 	logger.Info("Database connected successfully")
 
-	//创建表
+	// 自动迁移数据库表
 	if cfg.Database.AutoMigrate {
-		if err := db.AutoMigrate(&model.User{}, &model.Device{}); err != nil {
+		if err := db.AutoMigrate(
+			&model.User{},
+			&model.Device{},
+			&model.Role{},
+			&model.Permission{},
+			&model.Menu{},
+		); err != nil {
 			logger.Fatal("Database migration failed", zap.Error(err))
 		}
 		logger.Info("Database migration completed")
 	}
+
+	return db
 }
 
 func initZapLog(conf *config.Config) {

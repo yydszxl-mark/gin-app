@@ -19,6 +19,7 @@ type User struct {
 	Salt      string         `gorm:"size:32;not null" json:"-" swaggerignore:"true"`
 	Avatar    string         `gorm:"size:256" json:"avatar" example:"https://example.com/avatar.jpg"`
 	Status    int8           `gorm:"default:1;not null" json:"status" example:"1"`
+	Roles     []Role         `gorm:"many2many:user_roles;" json:"roles,omitempty"` // 用户拥有的角色
 }
 
 func (User) TableName() string {

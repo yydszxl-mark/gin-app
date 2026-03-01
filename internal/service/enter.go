@@ -2,19 +2,24 @@ package service
 
 import "gin-app-start/internal/repository"
 
-var ServiceGroupApp = new(ServiceGroup)
-
+// ServiceGroup 服务层组
 type ServiceGroup struct {
-	UserService
-	DeviceService
+	UserService       UserService
+	DeviceService     DeviceService
+	AuthService       AuthService
+	RoleService       RoleService
+	PermissionService PermissionService
+	MenuService       MenuService
 }
 
-var (
-	userRepository   = repository.RepoGroupApp.UserRepository
-	deviceRepository = repository.RepoGroupApp.DeviceRepository
-)
-
-func init() {
-	ServiceGroupApp.UserService = &userService{}
-	ServiceGroupApp.DeviceService = &deviceService{}
+// NewServiceGroup 创建服务层组
+func NewServiceGroup(repo *repository.RepositoryGroup) *ServiceGroup {
+	return &ServiceGroup{
+		UserService:       NewUserService(repo.UserRepo),
+		DeviceService:     NewDeviceService(repo.DeviceRepo),
+		AuthService:       NewAuthService(repo.UserRepo, repo.RoleRepo),
+		RoleService:       NewRoleService(repo.RoleRepo),
+		PermissionService: NewPermissionService(repo.PermissionRepo),
+		MenuService:       NewMenuService(repo.MenuRepo),
+	}
 }
