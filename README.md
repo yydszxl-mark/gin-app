@@ -1,110 +1,142 @@
 # Gin App Start
 
-基于 [Gin](https://github.com/gin-gonic/gin) 框架的现代化 Go Web 应用脚手架，遵循清晰的分层架构设计，支持 PostgreSQL 和 Redis。
+🚀 基于 Go 1.24 和 Gin 框架的企业级 Web 应用脚手架，采用清晰的分层架构设计，开箱即用。
 
-> ⚡ **最新版本**: v2.0.0 - 已升级到 Go 1.24 和最新依赖包
+[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev)
+[![Gin Version](https://img.shields.io/badge/Gin-1.10.0-00ADD8?style=flat)](https://github.com/gin-gonic/gin)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 📚 完整文档
+## ✨ 核心特性
 
-- 📖 **[项目使用指南](docs/PROJECT_GUIDE.md)** - 详细的项目文档（推荐）
-- 🔌 **[API 接口文档](docs/API_REFERENCE.md)** - 完整的 API 参考
-- 🏗️ **[架构设计文档](docs/ARCHITECTURE.md)** - 技术架构深度解析
+- 🏗️ **标准项目布局** - 遵循 Go 标准项目结构（cmd/internal/pkg）
+- 📦 **三层架构** - Controller → Service → Repository 清晰分层
+- 🗄️ **数据库支持** - PostgreSQL 17 + Redis 7 + GORM ORM
+- 📝 **结构化日志** - 基于 uber/zap 的高性能日志系统
+- 🛡️ **统一错误处理** - 自定义业务错误码和错误包装
+- 🔄 **统一响应格式** - 标准化的 JSON API 响应
+- 🔌 **丰富中间件** - 日志、恢复、CORS、限流等开箱即用
+- ⚙️ **多环境配置** - 基于 Viper 的灵活配置管理
+- 🐳 **容器化支持** - 完整的 Docker 和 Docker Compose 配置
+- 📚 **Swagger 文档** - 自动生成 API 文档
+- 🔄 **优雅关闭** - 支持 Graceful Shutdown
+- 🔧 **泛型仓储** - 使用 Go 泛型实现通用数据访问层
 
-## 特性
+## 📚 文档导航
 
-- ✅ 清晰的分层架构（Controller -> Service -> Repository）
-- ✅ PostgreSQL 数据库支持
-- ✅ Redis 缓存支持
-- ✅ 结构化日志（zap）
-- ✅ 统一错误处理
-- ✅ 统一响应格式
-- ✅ 中间件支持（日志、恢复、限流、CORS）
-- ✅ 优雅关闭
-- ✅ 环境配置管理
-- ✅ 自动数据库迁移
+| 文档 | 说明 |
+|------|------|
+| [项目使用指南](docs/PROJECT_GUIDE.md) | 详细的开发文档和最佳实践 |
+| [API 接口文档](docs/API_REFERENCE.md) | 完整的 API 参考和示例 |
+| [架构设计文档](docs/ARCHITECTURE.md) | 技术架构和设计理念 |
 
-## 目录结构
+## 🚀 快速开始
 
-```
-gin-app-start/
-├── cmd/                    # 应用程序入口
-│   └── server/
-│       └── main.go        # 主入口文件
-├── internal/              # 私有应用程序代码
-│   ├── config/           # 配置加载
-│   ├── controller/       # HTTP 控制器层
-│   ├── service/          # 业务逻辑层
-│   ├── repository/       # 数据访问层
-│   ├── model/            # 数据模型
-│   ├── middleware/       # Gin 中间件
-│   └── router/           # 路由配置
-├── pkg/                  # 公共库代码
-│   ├── database/         # 数据库连接
-│   ├── logger/           # 日志处理
-│   ├── errors/           # 错误处理
-│   └── response/         # 统一响应格式
-├── configs/              # 配置文件
-│   ├── config.local.yaml
-│   ├── config.dev.yaml
-│   └── config.prod.yaml
-├── go.mod
-└── go.sum
-```
+### 前置要求
 
-## 快速开始
+- Go 1.24+
+- PostgreSQL 12+ (推荐 17)
+- Redis 6.0+ (推荐 7)
+- Docker & Docker Compose (可选)
 
-### 环境要求
+### 方式一：使用 Docker Compose（推荐）
 
-- Go >= 1.24
-- PostgreSQL >= 12
-- Redis >= 6.0
-
-### 安装依赖
+一键启动所有服务（应用 + PostgreSQL + Redis）：
 
 ```bash
-go mod download
-```
+# 克隆项目
+git clone <your-repo-url>
+cd gin-app-start
 
-### 配置数据库
+# 启动所有服务
+docker-compose up -d
 
-1. 创建 PostgreSQL 数据库：
+# 查看日志
+docker-compose logs -f app
 
-```sql
-CREATE DATABASE gin_app;
-```
-
-2. 修改配置文件 `configs/config.local.yaml`：
-
-```yaml
-database:
-  host: localhost
-  port: 5432
-  user: postgres
-  password: postgres
-  dbname: gin_app
-  sslmode: disable
-```
-
-### 运行应用
-
-```bash
-# 本地环境
-SERVER_ENV=local go run cmd/server/main.go
-
-# 开发环境
-SERVER_ENV=dev go run cmd/server/main.go
-
-# 生产环境
-SERVER_ENV=prod go run cmd/server/main.go
-```
-
-### 健康检查
-
-```bash
+# 健康检查
 curl http://localhost:9060/health
 ```
 
-## API 文档
+### 方式二：本地开发
+
+```bash
+# 1. 安装依赖
+go mod download
+
+# 2. 启动数据库（使用 Docker）
+docker run -d --name postgres -e POSTGRES_DB=gin_app \
+  -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17-alpine
+
+docker run -d --name redis -p 6379:6379 redis:7-alpine
+
+# 3. 配置环境（编辑 configs/config.local.yaml）
+# 根据实际情况修改数据库连接信息
+
+# 4. 运行应用
+make run
+# 或
+SERVER_ENV=local go run cmd/server/main.go
+
+# 5. 验证运行
+curl http://localhost:9060/health
+```
+
+### 方式三：热重载开发
+
+```bash
+# 安装 Air
+go install github.com/cosmtrek/air@latest
+
+# 启动热重载
+air
+```
+
+## 📁 项目结构
+
+```
+gin-app-start/
+├── cmd/                      # 应用程序入口
+│   └── server/main.go       # 主程序
+├── internal/                 # 私有应用代码
+│   ├── config/              # 配置管理
+│   ├── controller/          # HTTP 控制器（处理请求/响应）
+│   ├── service/             # 业务逻辑层
+│   ├── repository/          # 数据访问层（含泛型基类）
+│   ├── model/               # 数据模型定义
+│   ├── dto/                 # 数据传输对象
+│   ├── middleware/          # Gin 中间件
+│   └── router/              # 路由配置
+├── pkg/                      # 可复用公共库
+│   ├── database/            # 数据库连接（PostgreSQL/Redis）
+│   ├── logger/              # 日志封装
+│   ├── errors/              # 错误定义
+│   ├── response/            # 统一响应
+│   └── utils/               # 工具函数
+├── configs/                  # 配置文件
+│   ├── config.local.yaml    # 本地开发
+│   ├── config.dev.yaml      # 开发环境
+│   └── config.prod.yaml     # 生产环境
+├── docs/                     # 文档和 Swagger
+├── docker-compose.yml        # Docker Compose 配置
+├── Dockerfile                # Docker 镜像构建
+├── Makefile                  # 常用命令
+└── go.mod                    # Go 模块依赖
+```
+
+## 🔧 技术栈
+
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| 语言 | Go | 1.24+ |
+| Web 框架 | Gin | 1.10.0 |
+| ORM | GORM | 1.25.12 |
+| 数据库 | PostgreSQL | 17 |
+| 缓存 | Redis | 7 |
+| 日志 | Zap | 1.27.0 |
+| 配置 | Viper | 1.19.0 |
+| 文档 | Swagger | 1.16.3 |
+
+## 📖 API 示例
 
 ### 健康检查
 
@@ -114,9 +146,8 @@ GET /health
 
 ### 用户管理
 
-#### 创建用户
-
 ```bash
+# 创建用户
 POST /api/v1/users
 Content-Type: application/json
 
@@ -126,56 +157,51 @@ Content-Type: application/json
   "phone": "13800138000",
   "password": "password123"
 }
-```
 
-#### 获取用户
-
-```bash
+# 获取用户
 GET /api/v1/users/:id
-```
 
-#### 更新用户
-
-```bash
+# 更新用户
 PUT /api/v1/users/:id
-Content-Type: application/json
 
-{
-  "email": "newemail@example.com",
-  "phone": "13900139000"
-}
-```
-
-#### 删除用户
-
-```bash
+# 删除用户
 DELETE /api/v1/users/:id
-```
 
-#### 用户列表
-
-```bash
+# 用户列表（分页）
 GET /api/v1/users?page=1&page_size=10
 ```
 
-## 响应格式
+### 设备管理
 
-### 成功响应
+```bash
+# 创建设备
+POST /api/v1/devices
 
+# 获取设备
+GET /api/v1/devices/:id
+
+# 更新设备
+PUT /api/v1/devices/:id
+
+# 删除设备
+DELETE /api/v1/devices/:id
+
+# 设备列表
+GET /api/v1/devices?page=1&page_size=10
+```
+
+### 统一响应格式
+
+成功响应：
 ```json
 {
   "code": 0,
   "message": "success",
-  "data": {
-    "id": 1,
-    "username": "testuser",
-    "email": "test@example.com"
-  }
+  "data": { ... }
 }
 ```
 
-### 错误响应
-
+错误响应：
 ```json
 {
   "code": 10001,
@@ -184,8 +210,7 @@ GET /api/v1/users?page=1&page_size=10
 }
 ```
 
-### 分页响应
-
+分页响应：
 ```json
 {
   "code": 0,
@@ -199,9 +224,17 @@ GET /api/v1/users?page=1&page_size=10
 }
 ```
 
-## 配置说明
+## ⚙️ 配置说明
 
-### 服务器配置
+配置文件位于 `configs/` 目录，通过环境变量 `SERVER_ENV` 选择：
+
+```bash
+SERVER_ENV=local    # configs/config.local.yaml
+SERVER_ENV=dev      # configs/config.dev.yaml
+SERVER_ENV=prod     # configs/config.prod.yaml
+```
+
+主要配置项：
 
 ```yaml
 server:
@@ -209,74 +242,66 @@ server:
   mode: debug             # 运行模式: debug/release/test
   read_timeout: 60        # 读超时（秒）
   write_timeout: 60       # 写超时（秒）
-  limit_num: 100          # 限流数（每秒请求数）
-```
+  limit_num: 100          # 限流：每秒请求数（0=不限流）
 
-### 数据库配置
-
-```yaml
 database:
-  host: localhost         # 数据库主机
-  port: 5432             # 数据库端口
-  user: postgres         # 数据库用户
-  password: postgres     # 数据库密码
-  dbname: gin_app        # 数据库名
-  sslmode: disable       # SSL模式
-  max_idle_conns: 10     # 最大空闲连接数
-  max_open_conns: 100    # 最大打开连接数
-  max_lifetime: 3600     # 连接最大生命周期（秒）
-  log_level: info        # 日志级别
-  auto_migrate: true     # 自动迁移
-```
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  dbname: gin_app
+  sslmode: disable
+  max_idle_conns: 10      # 最大空闲连接
+  max_open_conns: 100     # 最大打开连接
+  max_lifetime: 3600      # 连接生命周期（秒）
+  log_level: info         # 日志级别
+  auto_migrate: true      # 自动迁移表结构
 
-### Redis配置
-
-```yaml
 redis:
-  addr: localhost:6379   # Redis地址
-  password: ""           # Redis密码
-  db: 0                  # Redis数据库
-  pool_size: 10          # 连接池大小
-  min_idle_conns: 5      # 最小空闲连接数
-  max_retries: 3         # 最大重试次数
+  addr: localhost:6379
+  password: ""
+  db: 0
+  pool_size: 10
+  min_idle_conns: 5
+  max_retries: 3
+
+log:
+  level: debug            # debug/info/warn/error
+  file_path: logs/app.log
+  max_size: 100           # MB
+  max_age: 7              # 天
 ```
 
-## Docker 部署
+## 🛠️ 开发指南
 
-### 构建镜像
+### Makefile 命令
 
 ```bash
-docker build -t gin-app-start .
+make run            # 运行应用
+make build          # 编译应用
+make test           # 运行测试
+make fmt            # 格式化代码
+make lint           # 代码检查
+make clean          # 清理编译文件
+make deps           # 下载依赖
+make docker-build   # 构建 Docker 镜像
+make docker-run     # 运行 Docker 容器
+make swagger        # 生成 Swagger 文档
+make install-tools  # 安装开发工具
 ```
 
-### 运行容器
+### 添加新功能
 
-```bash
-docker run -d \
-  -p 9060:9060 \
-  -e SERVER_ENV=prod \
-  -e DB_HOST=postgres \
-  -e DB_USER=postgres \
-  -e DB_PASSWORD=postgres \
-  -e DB_NAME=gin_app \
-  -e REDIS_ADDR=redis:6379 \
-  -e REDIS_PASSWORD="" \
-  gin-app-start
-```
+1. **定义模型** - `internal/model/your_model.go`
+2. **创建 Repository** - `internal/repository/your_repository.go`
+3. **实现 Service** - `internal/service/your_service.go`
+4. **添加 Controller** - `internal/controller/your_controller.go`
+5. **注册路由** - `internal/router/router.go`
+6. **更新 main.go** - 初始化依赖注入
 
-## 开发指南
-
-### 添加新的 API
-
-1. 在 `internal/model` 中定义数据模型
-2. 在 `internal/repository` 中实现数据访问层
-3. 在 `internal/service` 中实现业务逻辑
-4. 在 `internal/controller` 中实现控制器
-5. 在 `internal/router` 中注册路由
+详细开发指南请参考 [项目使用指南](docs/PROJECT_GUIDE.md)。
 
 ### 错误处理
-
-使用 `pkg/errors` 包定义和处理业务错误：
 
 ```go
 import "gin-app-start/pkg/errors"
@@ -284,16 +309,14 @@ import "gin-app-start/pkg/errors"
 // 使用预定义错误
 return errors.ErrUserNotFound
 
-// 创建新错误
-return errors.NewBusinessError(10001, "自定义错误消息")
+// 创建自定义错误
+return errors.NewBusinessError(10001, "自定义错误")
 
 // 包装错误
 return errors.WrapBusinessError(10001, "操作失败", err)
 ```
 
 ### 日志记录
-
-使用 `pkg/logger` 包记录日志：
 
 ```go
 import (
@@ -306,11 +329,92 @@ logger.Info("操作成功",
     zap.Uint("user_id", userID),
 )
 
-logger.Error("操作失败", 
-    zap.Error(err),
-)
+logger.Error("操作失败", zap.Error(err))
 ```
 
-## 许可证
+## 🐳 Docker 部署
 
-MIT License
+### 使用 Docker Compose
+
+```bash
+# 启动所有服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 停止并删除数据
+docker-compose down -v
+```
+
+### 单独构建和运行
+
+```bash
+# 构建镜像
+docker build -t gin-app-start:latest .
+
+# 运行容器
+docker run -d -p 9060:9060 \
+  -e SERVER_ENV=prod \
+  -e DB_HOST=your-db-host \
+  -e DB_PASSWORD=your-password \
+  -e REDIS_ADDR=your-redis:6379 \
+  --name gin-app \
+  gin-app-start:latest
+```
+
+## 📊 性能优化建议
+
+- 数据库连接池：根据 QPS 调整 `max_idle_conns` 和 `max_open_conns`
+- Redis 缓存：合理使用缓存减少数据库查询
+- 日志级别：生产环境使用 `warn` 或 `error` 级别
+- 限流配置：根据服务器性能设置 `limit_num`
+- 索引优化：为常用查询字段添加数据库索引
+
+## 🔒 安全建议
+
+- 生产环境使用 HTTPS
+- 实现 JWT 或 Session 认证
+- 密码使用 bcrypt 加密
+- 启用 CORS 白名单
+- 实施 API 限流
+- 定期更新依赖包
+
+## 📝 常见问题
+
+| 问题 | 解决方案 |
+|------|----------|
+| 数据库连接失败 | 检查数据库是否启动，验证连接信息 |
+| 端口被占用 | 修改配置文件中的端口号 |
+| 依赖下载慢 | 设置 GOPROXY：`go env -w GOPROXY=https://goproxy.cn,direct` |
+| 热重载不工作 | 安装 Air：`go install github.com/cosmtrek/air@latest` |
+
+更多问题请查看 [项目使用指南](docs/PROJECT_GUIDE.md#常见问题)。
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本项目
+2. 创建特性分支：`git checkout -b feature/AmazingFeature`
+3. 提交更改：`git commit -m 'Add some AmazingFeature'`
+4. 推送到分支：`git push origin feature/AmazingFeature`
+5. 提交 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+
+## 🙏 致谢
+
+- [Gin](https://github.com/gin-gonic/gin) - 高性能 Web 框架
+- [GORM](https://gorm.io) - 优秀的 ORM 库
+- [Zap](https://github.com/uber-go/zap) - 高性能日志库
+- [Viper](https://github.com/spf13/viper) - 配置管理库
+
+---
+
+⭐ 如果这个项目对你有帮助，请给个 Star 支持一下！
