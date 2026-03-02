@@ -155,6 +155,7 @@ func (ctrl *DeviceController) DeleteDevice(c *gin.Context) {
 //	@Success		200			{object}	response.Response
 //	@Failure		500			{object}	response.Response
 //	@Router			/api/v1/devices [get]
+
 func (ctrl *DeviceController) ListDevices(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))

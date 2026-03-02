@@ -19,7 +19,18 @@ func NewAuthController(authService service.AuthService) *AuthController {
 	}
 }
 
-// Login 用户登录
+// Login godoc
+//
+//	@Summary		User login
+//	@Description	Authenticate user with username and password
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.LoginRequest	true	"Login credentials"
+//	@Success		200		{object}	response.Response{data=dto.LoginResponse}
+//	@Failure		400		{object}	response.Response
+//	@Failure		401		{object}	response.Response
+//	@Router			/api/v1/auth/login [post]
 func (ctrl *AuthController) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -36,7 +47,18 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 	response.Success(c, result)
 }
 
-// RefreshToken 刷新 Token
+// RefreshToken godoc
+//
+//	@Summary		Refresh access token
+//	@Description	Get new access token using refresh token
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.RefreshTokenRequest	true	"Refresh token"
+//	@Success		200		{object}	response.Response{data=dto.LoginResponse}
+//	@Failure		400		{object}	response.Response
+//	@Failure		401		{object}	response.Response
+//	@Router			/api/v1/auth/refresh [post]
 func (ctrl *AuthController) RefreshToken(c *gin.Context) {
 	var req dto.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -53,7 +75,17 @@ func (ctrl *AuthController) RefreshToken(c *gin.Context) {
 	response.Success(c, result)
 }
 
-// GetUserInfo 获取当前用户信息
+// GetUserInfo godoc
+//
+//	@Summary		Get current user info
+//	@Description	Get authenticated user information
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	response.Response{data=dto.UserInfo}
+//	@Failure		401	{object}	response.Response
+//	@Router			/api/v1/user/info [get]
 func (ctrl *AuthController) GetUserInfo(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -70,7 +102,19 @@ func (ctrl *AuthController) GetUserInfo(c *gin.Context) {
 	response.Success(c, userInfo)
 }
 
-// ChangePassword 修改密码
+// ChangePassword godoc
+//
+//	@Summary		Change password
+//	@Description	Change current user password
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		dto.ChangePasswordRequest	true	"Password change request"
+//	@Success		200		{object}	response.Response
+//	@Failure		400		{object}	response.Response
+//	@Failure		401		{object}	response.Response
+//	@Router			/api/v1/user/change-password [post]
 func (ctrl *AuthController) ChangePassword(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -92,7 +136,16 @@ func (ctrl *AuthController) ChangePassword(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// Logout 用户登出
+// Logout godoc
+//
+//	@Summary		User logout
+//	@Description	Logout current user
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	response.Response
+//	@Router			/api/v1/user/logout [post]
 func (ctrl *AuthController) Logout(c *gin.Context) {
 	// 这里可以实现 Token 黑名单等逻辑
 	// 目前简单返回成功

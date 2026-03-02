@@ -1,5 +1,17 @@
 basePath: /
 definitions:
+  gin-app-start_internal_dto.ChangePasswordRequest:
+    properties:
+      new_password:
+        maxLength: 32
+        minLength: 6
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
   gin-app-start_internal_dto.CreateDeviceRequest:
     properties:
       content:
@@ -37,6 +49,34 @@ definitions:
     - password
     - username
     type: object
+  gin-app-start_internal_dto.LoginRequest:
+    properties:
+      password:
+        example: password123
+        type: string
+      username:
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  gin-app-start_internal_dto.LoginResponse:
+    properties:
+      expires_at:
+        type: integer
+      token:
+        type: string
+      user_info:
+        $ref: '#/definitions/gin-app-start_internal_dto.UserInfo'
+    type: object
+  gin-app-start_internal_dto.RefreshTokenRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
   gin-app-start_internal_dto.UpdateDeviceRequest:
     properties:
       content:
@@ -66,6 +106,25 @@ definitions:
         example: 1
         type: integer
     type: object
+  gin-app-start_internal_dto.UserInfo:
+    properties:
+      avatar:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      phone:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      status:
+        type: integer
+      username:
+        type: string
+    type: object
   gin-app-start_pkg_response.Response:
     properties:
       code:
@@ -93,6 +152,76 @@ info:
   title: Gin App API
   version: "1.0"
 paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with username and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/gin-app-start_internal_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/gin-app-start_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/gin-app-start_internal_dto.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      summary: User login
+      tags:
+      - auth
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get new access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/gin-app-start_internal_dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/gin-app-start_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/gin-app-start_internal_dto.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      summary: Refresh access token
+      tags:
+      - auth
   /api/v1/devices:
     get:
       consumes:
@@ -255,6 +384,81 @@ paths:
       summary: Update device information
       tags:
       - devices
+  /api/v1/user/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change current user password
+      parameters:
+      - description: Password change request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/gin-app-start_internal_dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - auth
+  /api/v1/user/info:
+    get:
+      consumes:
+      - application/json
+      description: Get authenticated user information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/gin-app-start_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/gin-app-start_internal_dto.UserInfo'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get current user info
+      tags:
+      - auth
+  /api/v1/user/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - auth
   /api/v1/users:
     get:
       consumes:
@@ -278,10 +482,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
       summary: List users
       tags:
       - users
@@ -307,10 +517,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
       summary: Create a new user
       tags:
       - users
@@ -336,6 +552,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
         "404":
           description: Not Found
           schema:
@@ -344,6 +564,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
       summary: Delete user
       tags:
       - users
@@ -368,6 +590,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
         "404":
           description: Not Found
           schema:
@@ -376,6 +602,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
       summary: Get user by ID
       tags:
       - users
@@ -406,6 +634,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin-app-start_pkg_response.Response'
         "404":
           description: Not Found
           schema:
@@ -414,6 +646,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin-app-start_pkg_response.Response'
+      security:
+      - BearerAuth: []
       summary: Update user information
       tags:
       - users
@@ -445,4 +679,10 @@ paths:
 schemes:
 - http
 - https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

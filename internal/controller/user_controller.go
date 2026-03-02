@@ -26,9 +26,11 @@ func NewUserController(userService service.UserService) *UserController {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			request	body		dto.CreateUserRequest	true	"User information"
 //	@Success		200		{object}	response.Response
 //	@Failure		400		{object}	response.Response
+//	@Failure		401		{object}	response.Response
 //	@Failure		500		{object}	response.Response
 //	@Router			/api/v1/users [post]
 func (ctrl *UserController) CreateUser(c *gin.Context) {
@@ -54,9 +56,11 @@ func (ctrl *UserController) CreateUser(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path		int	true	"User ID"
 //	@Success		200	{object}	response.Response
 //	@Failure		400	{object}	response.Response
+//	@Failure		401	{object}	response.Response
 //	@Failure		404	{object}	response.Response
 //	@Failure		500	{object}	response.Response
 //	@Router			/api/v1/users/{id} [get]
@@ -84,10 +88,12 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id		path		int						true	"User ID"
 //	@Param			request	body		dto.UpdateUserRequest	true	"User information to update"
 //	@Success		200		{object}	response.Response
 //	@Failure		400		{object}	response.Response
+//	@Failure		401		{object}	response.Response
 //	@Failure		404		{object}	response.Response
 //	@Failure		500		{object}	response.Response
 //	@Router			/api/v1/users/{id} [put]
@@ -121,9 +127,11 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			id	path		int	true	"User ID"
 //	@Success		200	{object}	response.Response
 //	@Failure		400	{object}	response.Response
+//	@Failure		401	{object}	response.Response
 //	@Failure		404	{object}	response.Response
 //	@Failure		500	{object}	response.Response
 //	@Router			/api/v1/users/{id} [delete]
@@ -150,9 +158,11 @@ func (ctrl *UserController) DeleteUser(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
+//	@Security		BearerAuth
 //	@Param			page		query		int	false	"Page number"	default(1)
 //	@Param			page_size	query		int	false	"Page size"		default(10)
 //	@Success		200			{object}	response.Response
+//	@Failure		401			{object}	response.Response
 //	@Failure		500			{object}	response.Response
 //	@Router			/api/v1/users [get]
 func (ctrl *UserController) ListUsers(c *gin.Context) {
